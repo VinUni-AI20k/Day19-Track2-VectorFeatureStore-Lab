@@ -83,8 +83,17 @@ for p in sorted(FEAST_DATA.glob("*.parquet")):
 # Chạy `feast apply` để Feast đọc file definition và ghi vào `registry.db`.
 
 # %%
+# Clean stale registry + online store for reproducible apply
+import sys as _sys
+import os as _os
+_FEAST_EXE = str(REPO_ROOT / ".venv" / "Scripts" / "feast.exe")
+for _stale in ("registry.db", "online_store.db"):
+    _p = FEAST_DIR / _stale
+    if _p.exists():
+        _p.unlink()
+
 res = subprocess.run(
-    ["feast", "apply"],
+    [_FEAST_EXE, "apply"],
     cwd=str(FEAST_DIR),
     capture_output=True, text=True, check=False,
 )
@@ -104,7 +113,7 @@ assert res.returncode == 0, f"feast apply failed: {res.stderr}"
 # %%
 end_dt = NOW.strftime("%Y-%m-%dT%H:%M:%S")
 res = subprocess.run(
-    ["feast", "materialize-incremental", end_dt],
+    [_FEAST_EXE, "materialize-incremental", end_dt],
     cwd=str(FEAST_DIR),
     capture_output=True, text=True, check=False,
 )
@@ -185,7 +194,7 @@ else:
 import pandas as pd
 entity_df = pd.DataFrame({
     "user_id": ["u_001", "u_002", "u_003"],
-    "event_timestamp": [NOW - timedelta(hours=2), NOW - timedelta(hours=1), NOW],
+    "event_timestamp": [NOW, NOW - timedelta(minutes=30), NOW - timedelta(hours=1)],
 })
 
 historical = fs.get_historical_features(
