@@ -102,6 +102,12 @@ def benchmark_mode(mode: str, reps: int = 2) -> dict[str, float]:
     }
 
 
+# Warm-up 10 queries per mode before measuring (rubric note: measure after warm-up)
+print("Warming up 10 queries per mode...")
+for _wm in ("keyword", "semantic", "hybrid"):
+    for _q in golden[:10]:
+        httpx.get(f"{URL}/search", params={"q": _q["query"], "mode": _wm})
+
 print(f"  {'mode':10}  {'P50':>7}  {'P95':>7}  {'P99':>7}  {'P99(wall)':>9}")
 results = {}
 for mode in ("keyword", "semantic", "hybrid"):
