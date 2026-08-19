@@ -1,0 +1,40 @@
+# Day 19 lab — Linux environment only.
+#
+# Brings up one idle container with the repo mounted at /workspace. Nothing is
+# installed, seeded, or started automatically: you run setup-lite.sh and the
+# make targets yourself, inside the container.
+#
+#   docker compose -f docker-compose.lab.yml up -d --build
+#   docker compose -f docker-compose.lab.yml exec lab bash
+#   bash setup-lite.sh          <- inside the container
+
+services:
+  lab:
+    build: .
+    image: day19-lab:lite
+    container_name: day19-lab
+
+    volumes:
+      # The whole repo, read-write. Everything you create in here -- data/,
+      # executed .ipynb, the Feast registry -- appears on the Windows drive
+      # immediately, so git and Explorer see it.
+      - .:/workspace
+
+      # ...except .venv, which stays on the container's own filesystem.
+      # Installing it through the Windows bind mount means ~23k small files
+      # over virtiofs and takes minutes; here it takes seconds. The trade-off
+      # is that .venv is not visible from Windows -- which is fine, it holds no
+      # work of yours. `down -v` wipes it; plain `down` keeps it.
+      - venv:/workspace/.venv
+
+    ports:
+      - "8888:8888"   # make lab   (Jupyter)
+      - "8000:8000"   # make api   (FastAPI)
+
+    # Idle. The container is a place to work, not a service.
+    command: sleep infinity
+    stdin_open: true
+    tty: true
+
+volumes:
+  venv:
